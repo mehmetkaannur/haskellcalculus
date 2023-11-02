@@ -92,7 +92,7 @@ maclaurin :: Expr   -- ^ expression to approximate (with `x` free)
           -> Double -- ^ the approximate result
 maclaurin f x n = sum(zipWith (*) evalList (zipWith (/) coeffList factList))
   where
-    diffList = take n $ iterate (`diff` "x") f
-    evalList = map (\exp -> eval exp [("x", 0.0)]) diffList
+    diffList  = take n $ iterate (`diff` "x") f
+    evalList  = map (\exp -> eval exp [("x", 0.0)]) diffList
     coeffList = take n $ iterate (* x) 1
-    factList = take n $ scanl (*) 1[1..]
+    factList  = take n $ scanl (*) 1[1..]
