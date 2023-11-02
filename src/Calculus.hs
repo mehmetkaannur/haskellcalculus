@@ -16,19 +16,19 @@ type Env = [(String, Double)]
 deriving instance Show Expr
 
 instance Num Expr where
-  fromInteger = undefined
-  negate      = undefined
-  (+)         = undefined
-  (*)         = undefined
+  fromInteger n = Val (fromInteger n)
+  negate a      = Neg a
+  (+) a b       = Add a b
+  (*) a b       = Mul a b
 
 instance Fractional Expr where
-  fromRational = undefined
-  (/)          = undefined
+  fromRational a = Val (fromRational a)
+  (/) a b        = Div a b
 
 instance Floating Expr where
-  sin = undefined
-  cos = undefined
-  log = undefined
+  sin = Sin
+  cos = Cos
+  log = Log
 
 ---------------------------------------------------------------------------
 
@@ -72,15 +72,15 @@ Symbolically differentiates a term with respect to a given identifier.
 diff :: Expr -> String -> Expr
 diff (Val a) _   = Val 0.0
 diff (Id a) x 
-  | a == x    = Val 1.0
-  | otherwise = Val 0.0
+  | a == x       = Val 1.0
+  | otherwise    = Val 0.0
 diff (Neg a) x   = Neg(diff a x)
 diff (Mul a b) x = Add (Mul a (diff b x)) (Mul (diff a x) b)
 diff (Add a b) x = Add (diff a x) (diff b x)
 diff (Div a b) x = Div (Add (Mul (diff a x) b) (Neg (Mul a (diff b x)))) (Mul b b)
-diff (Sin a)   x = Mul (Cos a) (diff a x)
-diff (Cos a)   x = Neg (Mul (Sin a) (diff a x))
-diff (Log a)   x = Mul (Div (Val 1.0) a) (diff a x)
+diff (Sin a) x   = Mul (Cos a) (diff a x)
+diff (Cos a) x   = Neg (Mul (Sin a) (diff a x))
+diff (Log a) x   = Div (diff a x) a 
 
 {-|
 Computes the approximation of an expression `f` by expanding the Maclaurin
@@ -90,4 +90,9 @@ maclaurin :: Expr   -- ^ expression to approximate (with `x` free)
           -> Double -- ^ value to give to `x`
           -> Int    -- ^ number of terms to expand
           -> Double -- ^ the approximate result
-maclaurin f x t = undefined
+maclaurin f x n = sum(zipWith (*) evalList (zipWith (/) coeffList factList))
+  where
+    diffList = take n $ iterate (`diff` "x") f
+    evalList = map (\exp -> eval exp [("x", 0.0)]) diffList
+    coeffList = take n $ iterate (* x) 1
+    factList = take n $ scanl (*) 1[1..]
